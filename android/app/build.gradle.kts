@@ -37,6 +37,16 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // --- ADD THIS BLOCK ---
+    // This tells Gradle to run CMake during the build process.
+    externalNativeBuild {
+        cmake {
+            // Points to the CMake build script you created.
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
+    // --- END OF BLOCK ---
 }
 
 flutter {
