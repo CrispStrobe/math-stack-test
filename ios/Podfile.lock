@@ -1,22 +1,22 @@
 PODS:
   - Flutter (1.0.0)
-  - gmp_bridge (0.0.1):
+  - symbolic_math_bridge (1.0.0):
     - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
-  - gmp_bridge (from `.symlinks/plugins/gmp_bridge/ios`)
+  - symbolic_math_bridge (from `.symlinks/plugins/symbolic_math_bridge/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
-  gmp_bridge:
-    :path: ".symlinks/plugins/gmp_bridge/ios"
+  symbolic_math_bridge:
+    :path: ".symlinks/plugins/symbolic_math_bridge/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  gmp_bridge: 4c72cdd87ec3839d9dddf8f35c54a47c29142240
+  symbolic_math_bridge: 95eb4c358df28754698c646f37bbc95200689549
 
-PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+PODFILE CHECKSUM: 251cb053df7158f337c0712f2ab29f4e0fa474ce
 
 COCOAPODS: 1.16.2
