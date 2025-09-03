@@ -1,6 +1,6 @@
 PODS:
   - Flutter (1.0.0)
-  - symbolic_math_bridge (1.0.0):
+  - symbolic_math_bridge (1.0.13):
     - Flutter
 
 DEPENDENCIES:
@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  symbolic_math_bridge: 95eb4c358df28754698c646f37bbc95200689549
+  symbolic_math_bridge: 696bbaba761218783e623b65926ea204261712be
 
 PODFILE CHECKSUM: 251cb053df7158f337c0712f2ab29f4e0fa474ce
 

@@ -55,10 +55,16 @@ class SymbolFinder {
     ];
     results['FLINT'] = flintCandidates.where(symbolExists).toList();
     
-    // Test SymEngine symbols (C wrapper API)
+    // Test SymEngine symbols - EXACT matches from nm output
     final symengineCandidate = [
-      'basic_new_heap', 'basic_const_pi', 'basic_pow', 'basic_str', 'basic_free_stack',
-      'basic_new', 'basic_assign', 'basic_free', 'symengine_get_version'
+      'symengine_evaluate',
+      'symengine_expand', 
+      'symengine_factor',
+      'symengine_free_string',
+      'symengine_solve',
+      'symengine_have_component',
+      'symengine_print_stack_on_segfault',
+      'symengine_version'
     ];
     results['SymEngine'] = symengineCandidate.where(symbolExists).toList();
     
