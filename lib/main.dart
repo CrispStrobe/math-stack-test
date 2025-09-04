@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'cas_bridge.dart';
+// Import the plugin package instead of the local file
+import 'package:symbolic_math_bridge/symbolic_math_bridge.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,23 +29,23 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   Map<String, List<String>> _results = {};
   bool _isLoading = false;
-  CasBridge? _casBridge;
+  // Use the class from the plugin
+  SymbolicMathBridge? _bridge;
   String _error = '';
-  Map<String, bool> _libraryStatus = {};
 
   @override
   void initState() {
     super.initState();
     try {
-      _casBridge = CasBridge();
-      _libraryStatus = _casBridge!.getLibraryStatus();
+      // Initialize the bridge from the plugin
+      _bridge = SymbolicMathBridge();
     } catch (e) {
       _error = 'Failed to initialize bridge: $e';
     }
   }
 
   Future<void> _runTests() async {
-    if (_error.isNotEmpty || _casBridge == null) return;
+    if (_error.isNotEmpty || _bridge == null) return;
     
     setState(() {
       _isLoading = true;
@@ -52,8 +53,59 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     try {
-      // Get all test results
-      _results = _casBridge!.getTestResults();
+      // --- Run all the tests using the new API ---
+      final newResults = <String, List<String>>{};
+
+      newResults['SymEngine'] = [
+        'Evaluate 2+3*4: ${_bridge!.evaluate("2+3*4")}',
+        'Expand (x+1)^2: ${_bridge!.expand("(x+1)^2")}',
+        'Solve x^2-4=0: ${_bridge!.solve("x^2-4", "x")}',
+        'Differentiate sin(x): ${_bridge!.differentiate("sin(x)", "x")}',
+        'Substitute x=2 in x^2: ${_bridge!.substitute("x^2", "x", "2")}',
+        'Get Pi constant: ${_bridge!.getPi()}',
+      ];
+
+      newResults['Math Functions'] = [
+        'sin(pi/2): ${_bridge!.evaluate("sin(pi/2)")}',
+        'sqrt(16): ${_bridge!.callUnary("sqrt", "16")}',
+        'log(E): ${_bridge!.callUnary("log", _bridge!.getE())}',
+        'abs(-5): ${_bridge!.callUnary("abs", "-5")}',
+      ];
+      
+      newResults['Number Theory'] = [
+        'gcd(24, 36): ${_bridge!.gcd("24", "36")}',
+        'lcm(24, 36): ${_bridge!.lcm("24", "36")}',
+        '10!: ${_bridge!.factorial(10)}',
+        'fib(15): ${_bridge!.fibonacci(15)}',
+      ];
+      
+      // Matrix tests
+      final matrixA = _bridge!.createMatrix(2, 2);
+      matrixA.set(0, 0, "1");
+      matrixA.set(0, 1, "2");
+      matrixA.set(1, 0, "3");
+      matrixA.set(1, 1, "4");
+
+      final matrixB = _bridge!.createMatrix(2, 2);
+      matrixB.set(0, 0, "5");
+      matrixB.set(0, 1, "6");
+      matrixB.set(1, 0, "7");
+      matrixB.set(1, 1, "8");
+
+      final matrixC = matrixA * matrixB;
+
+      newResults['Matrix Operations'] = [
+        'Matrix A: ${matrixA.toString().replaceAll("\n", " ")}',
+        'Determinant of A: ${matrixA.getDeterminant()}',
+        'A * B: ${matrixC.toString().replaceAll("\n", " ")}',
+      ];
+
+      // Clean up matrix memory
+      matrixA.dispose();
+      matrixB.dispose();
+      matrixC.dispose();
+
+      _results = newResults;
       
       setState(() {
         _isLoading = false;
@@ -66,8 +118,10 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // --- UI (No changes needed below this line) ---
+
   Widget _buildResultCard(String library, List<String> results) {
-    final hasErrors = results.any((r) => r.contains('Error') || r.contains('not available') || r.contains('No symbols'));
+    final hasErrors = results.any((r) => r.toLowerCase().contains('error') || r.toLowerCase().contains('not available'));
     
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -84,7 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          '${results.length} ${library.contains('Symbols') ? 'symbols' : 'results'}',
+          '${results.length} results',
           style: TextStyle(color: Colors.grey[400], fontSize: 12),
         ),
         children: [
@@ -93,15 +147,14 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: results.map((result) {
-                final isError = result.contains('Error') || result.contains('not available');
-                final isSymbol = !result.contains(':') && !result.contains('=');
+                final isError = result.toLowerCase().contains('error');
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Text(
                     result,
                     style: TextStyle(
-                      fontFamily: !isSymbol ? 'monospace' : null,
-                      fontSize: isSymbol ? 12 : 13,
+                      fontFamily: 'monospace',
+                      fontSize: 13,
                       color: isError ? Colors.red[300] : Colors.white70,
                     ),
                   ),
@@ -109,41 +162,6 @@ class _MyHomePageState extends State<MyHomePage> {
               }).toList(),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusOverview() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Library Status',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-          ..._libraryStatus.entries.map((e) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                Icon(
-                  e.value ? Icons.check_circle : Icons.error,
-                  color: e.value ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Text(e.key, style: const TextStyle(fontSize: 14)),
-              ],
-            ),
-          )).toList(),
         ],
       ),
     );
@@ -175,12 +193,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
 
-            if (_libraryStatus.isNotEmpty) _buildStatusOverview(),
-            
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Mathematical Libraries Test Results',
+                'Full Stack Test Results',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
@@ -218,26 +234,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     Icon(Icons.calculate, size: 48, color: Colors.blue),
                     SizedBox(height: 16),
                     Text(
-                      'Mathematical Library Test Suite',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      'Press "Run Tests" to execute the full suite of mathematical operations.',
                       textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Testing mathematical libraries:\n\n'
-                      '• SymEngine: Symbolic mathematics\n'
-                      '• GMP: Big integer arithmetic\n'  
-                      '• MPFR: High-precision floating point\n'
-                      '• MPC: Complex number arithmetic\n'
-                      '• FLINT: Fast number theory\n\n'
-                      'Press "Run Tests" to execute mathematics!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, height: 1.5),
+                      style: TextStyle(fontSize: 16, height: 1.5),
                     ),
                   ],
                 ),
               ),
-              
+            
             const SizedBox(height: 100),
           ],
         ),
