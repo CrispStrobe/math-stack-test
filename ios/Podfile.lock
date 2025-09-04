@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  symbolic_math_bridge: d9a02a2364067fa13ddd260110ebbe3070d79ebe
+  symbolic_math_bridge: b892264a494a85f512fcd04809c0789dfdd17da3
 
 PODFILE CHECKSUM: 251cb053df7158f337c0712f2ab29f4e0fa474ce
 

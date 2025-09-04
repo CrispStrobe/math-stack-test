@@ -2,20 +2,26 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
 
-// SymEngine wrapper function signatures
-typedef SymEngineEvaluateC = Pointer<Utf8> Function(Pointer<Utf8> expression);
-typedef SymEngineSolveC = Pointer<Utf8> Function(Pointer<Utf8> expression, Pointer<Utf8> symbol);
-typedef SymEngineFreeStringC = Void Function(Pointer<Utf8> str);
-typedef SymEngineFactorC = Pointer<Utf8> Function(Pointer<Utf8> expression);
-typedef SymEngineExpandC = Pointer<Utf8> Function(Pointer<Utf8> expression);
+// Flutter SymEngine wrapper function signatures (with flutter_ prefix)
+typedef FlutterSymEngineEvaluateC = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineSolveC = Pointer<Utf8> Function(Pointer<Utf8> expression, Pointer<Utf8> symbol);
+typedef FlutterSymEngineFactorC = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineExpandC = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineFreeStringC = Void Function(Pointer<Utf8> str);
+typedef FlutterSymEngineVersionC = Pointer<Utf8> Function();
+typedef FlutterSymEngineTestBasicC = Pointer<Utf8> Function();
+typedef FlutterSymEngineTestSymbolicC = Pointer<Utf8> Function();
 
-typedef SymEngineEvaluateDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
-typedef SymEngineSolveDart = Pointer<Utf8> Function(Pointer<Utf8> expression, Pointer<Utf8> symbol);
-typedef SymEngineFreeStringDart = void Function(Pointer<Utf8> str);
-typedef SymEngineFactorDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
-typedef SymEngineExpandDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineEvaluateDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineSolveDart = Pointer<Utf8> Function(Pointer<Utf8> expression, Pointer<Utf8> symbol);
+typedef FlutterSymEngineFactorDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineExpandDart = Pointer<Utf8> Function(Pointer<Utf8> expression);
+typedef FlutterSymEngineFreeStringDart = void Function(Pointer<Utf8> str);
+typedef FlutterSymEngineVersionDart = Pointer<Utf8> Function();
+typedef FlutterSymEngineTestBasicDart = Pointer<Utf8> Function();
+typedef FlutterSymEngineTestSymbolicDart = Pointer<Utf8> Function();
 
-// Direct GMP signatures (your existing working ones)
+// Direct GMP signatures
 typedef MpzInitSetStrNative = Int32 Function(Pointer<Void> rop, Pointer<Utf8> str, Int32 base);
 typedef MpzGetStrNative = Pointer<Utf8> Function(Pointer<Utf8> str, Int32 base, Pointer<Void> op);
 typedef MpzClearNative = Void Function(Pointer<Void> x);
@@ -93,18 +99,21 @@ typedef FmpzCmpDart = int Function(Pointer<Void> f, Pointer<Void> g);
 typedef FmpzAbsDart = void Function(Pointer<Void> f1, Pointer<Void> f2);
 typedef FmpzFacUiDart = void Function(Pointer<Void> f, int n);
 
-/// Extended CAS Bridge with direct access to all math libraries
+/// Extended CAS Bridge with FULL access to all math libraries + new Flutter wrapper
 class CasBridge {
   late final DynamicLibrary _dylib;
   
-  // SymEngine wrapper functions
-  late final SymEngineEvaluateDart _evaluate;
-  late final SymEngineSolveDart _solve;
-  late final SymEngineFreeStringDart _freeString;
-  late final SymEngineFactorDart _factor;
-  late final SymEngineExpandDart _expand;
+  // Flutter SymEngine wrapper functions
+  late final FlutterSymEngineEvaluateDart _flutterEvaluate;
+  late final FlutterSymEngineSolveDart _flutterSolve;
+  late final FlutterSymEngineFactorDart _flutterFactor;
+  late final FlutterSymEngineExpandDart _flutterExpand;
+  late final FlutterSymEngineFreeStringDart _flutterFreeString;
+  late final FlutterSymEngineVersionDart _flutterVersion;
+  late final FlutterSymEngineTestBasicDart _flutterTestBasic;
+  late final FlutterSymEngineTestSymbolicDart _flutterTestSymbolic;
   
-  // Direct GMP functions (your existing working ones)
+  // Direct GMP functions
   late final MpzInitSetStrDart _mpzInitSetStr;
   late final MpzGetStrDart _mpzGetStr;
   late final MpzClearDart _mpzClear;
@@ -145,7 +154,8 @@ class CasBridge {
   late final FmpzAbsDart _fmpzAbs;
   late final FmpzFacUiDart _fmpzFacUi;
   
-  bool _symengineAvailable = false;
+  // Status flags for all libraries
+  bool _flutterSymengineAvailable = false;
   bool _gmpDirectAvailable = false;
   bool _mpfrDirectAvailable = false;
   bool _mpcDirectAvailable = false;
@@ -164,20 +174,23 @@ class CasBridge {
   }
 
   void _initializeLibraries() {
-    // Initialize SymEngine
+    // Initialize Flutter SymEngine wrapper
     try {
-      _evaluate = _dylib.lookup<NativeFunction<SymEngineEvaluateC>>('symengine_evaluate').asFunction();
-      _solve = _dylib.lookup<NativeFunction<SymEngineSolveC>>('symengine_solve').asFunction();
-      _freeString = _dylib.lookup<NativeFunction<SymEngineFreeStringC>>('symengine_free_string').asFunction();
-      _factor = _dylib.lookup<NativeFunction<SymEngineFactorC>>('symengine_factor').asFunction();
-      _expand = _dylib.lookup<NativeFunction<SymEngineExpandC>>('symengine_expand').asFunction();
-      _symengineAvailable = true;
-      print('✅ SymEngine loaded');
+      _flutterEvaluate = _dylib.lookup<NativeFunction<FlutterSymEngineEvaluateC>>('flutter_symengine_evaluate').asFunction();
+      _flutterSolve = _dylib.lookup<NativeFunction<FlutterSymEngineSolveC>>('flutter_symengine_solve').asFunction();
+      _flutterFactor = _dylib.lookup<NativeFunction<FlutterSymEngineFactorC>>('flutter_symengine_factor').asFunction();
+      _flutterExpand = _dylib.lookup<NativeFunction<FlutterSymEngineExpandC>>('flutter_symengine_expand').asFunction();
+      _flutterFreeString = _dylib.lookup<NativeFunction<FlutterSymEngineFreeStringC>>('flutter_symengine_free_string').asFunction();
+      _flutterVersion = _dylib.lookup<NativeFunction<FlutterSymEngineVersionC>>('flutter_symengine_version').asFunction();
+      _flutterTestBasic = _dylib.lookup<NativeFunction<FlutterSymEngineTestBasicC>>('flutter_symengine_test_basic_operations').asFunction();
+      _flutterTestSymbolic = _dylib.lookup<NativeFunction<FlutterSymEngineTestSymbolicC>>('flutter_symengine_test_symbolic').asFunction();
+      _flutterSymengineAvailable = true;
+      print('✅ Flutter SymEngine wrapper loaded');
     } catch (e) {
-      print('❌ SymEngine not available: $e');
+      print('❌ Flutter SymEngine wrapper not available: $e');
     }
 
-    // Initialize direct GMP (your existing working version)
+    // Initialize direct GMP
     try {
       _mpzInitSetStr = _dylib.lookup<NativeFunction<MpzInitSetStrNative>>('__gmpz_init_set_str').asFunction();
       _mpzGetStr = _dylib.lookup<NativeFunction<MpzGetStrNative>>('__gmpz_get_str').asFunction();
@@ -243,35 +256,35 @@ class CasBridge {
     }
   }
 
-  // SymEngine wrapper functions (unchanged)
+  // PUBLIC API: SymEngine wrapper functions
   String evaluate(String expression) {
-    if (!_symengineAvailable) return 'SymEngine not available';
+    if (!_flutterSymengineAvailable) return 'SymEngine not available';
     
     final Pointer<Utf8> exprPtr = expression.toNativeUtf8();
     try {
-      final Pointer<Utf8> resultPtr = _evaluate(exprPtr);
+      final Pointer<Utf8> resultPtr = _flutterEvaluate(exprPtr);
       final String result = resultPtr.toDartString();
-      _freeString(resultPtr);
+      _flutterFreeString(resultPtr);
       return result;
     } catch (e) {
-      return 'Error: $e';
+      return 'Flutter wrapper error: $e';
     } finally {
       calloc.free(exprPtr);
     }
   }
 
   String solve(String expression, String symbol) {
-    if (!_symengineAvailable) return 'SymEngine not available';
-    
+    if (!_flutterSymengineAvailable) return 'SymEngine not available';
+
     final Pointer<Utf8> exprPtr = expression.toNativeUtf8();
     final Pointer<Utf8> symbolPtr = symbol.toNativeUtf8();
     try {
-      final Pointer<Utf8> resultPtr = _solve(exprPtr, symbolPtr);
+      final Pointer<Utf8> resultPtr = _flutterSolve(exprPtr, symbolPtr);
       final String result = resultPtr.toDartString();
-      _freeString(resultPtr);
+      _flutterFreeString(resultPtr);
       return result;
     } catch (e) {
-      return 'Error: $e';
+      return 'Flutter wrapper error: $e';
     } finally {
       calloc.free(exprPtr);
       calloc.free(symbolPtr);
@@ -279,38 +292,78 @@ class CasBridge {
   }
 
   String factor(String expression) {
-    if (!_symengineAvailable) return 'SymEngine not available';
+    if (!_flutterSymengineAvailable) return 'SymEngine not available';
     
     final Pointer<Utf8> exprPtr = expression.toNativeUtf8();
     try {
-      final Pointer<Utf8> resultPtr = _factor(exprPtr);
+      final Pointer<Utf8> resultPtr = _flutterFactor(exprPtr);
       final String result = resultPtr.toDartString();
-      _freeString(resultPtr);
+      _flutterFreeString(resultPtr);
       return result;
     } catch (e) {
-      return 'Error: $e';
+      return 'Flutter wrapper error: $e';
     } finally {
       calloc.free(exprPtr);
     }
   }
 
   String expand(String expression) {
-    if (!_symengineAvailable) return 'SymEngine not available';
+    if (!_flutterSymengineAvailable) return 'SymEngine not available';
     
     final Pointer<Utf8> exprPtr = expression.toNativeUtf8();
     try {
-      final Pointer<Utf8> resultPtr = _expand(exprPtr);
+      final Pointer<Utf8> resultPtr = _flutterExpand(exprPtr);
       final String result = resultPtr.toDartString();
-      _freeString(resultPtr);
+      _flutterFreeString(resultPtr);
       return result;
     } catch (e) {
-      return 'Error: $e';
+      return 'Flutter wrapper error: $e';
     } finally {
       calloc.free(exprPtr);
     }
   }
 
-  // GMP Direct functions (your existing working version - unchanged)
+  // Flutter wrapper specific functions
+  String getFlutterWrapperVersion() {
+    if (!_flutterSymengineAvailable) return 'Flutter wrapper not available';
+    
+    try {
+      final Pointer<Utf8> resultPtr = _flutterVersion();
+      final String result = resultPtr.toDartString();
+      _flutterFreeString(resultPtr);
+      return result;
+    } catch (e) {
+      return 'Version error: $e';
+    }
+  }
+
+  String testFlutterWrapperBasic() {
+    if (!_flutterSymengineAvailable) return 'Flutter wrapper not available';
+    
+    try {
+      final Pointer<Utf8> resultPtr = _flutterTestBasic();
+      final String result = resultPtr.toDartString();
+      _flutterFreeString(resultPtr);
+      return result;
+    } catch (e) {
+      return 'Test error: $e';
+    }
+  }
+
+  String testFlutterWrapperSymbolic() {
+    if (!_flutterSymengineAvailable) return 'Flutter wrapper not available';
+    
+    try {
+      final Pointer<Utf8> resultPtr = _flutterTestSymbolic();
+      final String result = resultPtr.toDartString();
+      _flutterFreeString(resultPtr);
+      return result;
+    } catch (e) {
+      return 'Test error: $e';
+    }
+  }
+
+  // GMP Direct functions
   String testGMPDirect(int exponent) {
     if (!_gmpDirectAvailable) return 'GMP Direct not available';
     
@@ -345,23 +398,14 @@ class CasBridge {
     final Pointer<Void> sqrtPi = calloc<Uint8>(64).cast();
     
     try {
-      // Initialize with 256-bit precision
       _mpfrInit2(pi, precision);
       _mpfrInit2(sinPi, precision);
       _mpfrInit2(sqrtPi, precision);
-      
-      // Get π with high precision
       _mpfrConstPi(pi, rnd);
-      
-      // Calculate sin(π) (should be ~0)
       _mpfrSin(sinPi, pi, rnd);
-      
-      // Calculate sqrt(π)
       _mpfrSqrt(sqrtPi, pi, rnd);
       
-      // Convert to strings
       final expPtr = calloc<Int64>();
-      
       final piStrPtr = _mpfrGetStr(nullptr, expPtr, 10, 50, pi, rnd);
       final piStr = piStrPtr.toDartString();
       _free(piStrPtr.cast());
@@ -401,21 +445,13 @@ class CasBridge {
     final Pointer<Void> result = calloc<Uint8>(128).cast();
     
     try {
-      // Initialize complex numbers with 128-bit precision
       _mpcInit2(z1, precision);
       _mpcInit2(z2, precision);
       _mpcInit2(result, precision);
-      
-      // Set z1 = 3 + 4i
       _mpcSetUiUi(z1, 3, 4, rnd);
-      
-      // Set z2 = 1 + 2i  
       _mpcSetUiUi(z2, 1, 2, rnd);
-      
-      // Calculate z1 * z2
       _mpcMul(result, z1, z2, rnd);
       
-      // Convert to string
       final resultStrPtr = _mpcGetStr(10, 15, result, rnd);
       final resultStr = resultStrPtr.toDartString();
       _free(resultStrPtr.cast());
@@ -441,17 +477,11 @@ class CasBridge {
     final Pointer<Void> factorial = calloc<Uint8>(64).cast();
     
     try {
-      // Initialize FLINT integers
       _fmpzInit(n);
       _fmpzInit(factorial);
-      
-      // Set n = 20
       _fmpzSetUi(n, 20);
-      
-      // Calculate 20!
       _fmpzFacUi(factorial, 20);
       
-      // Convert to string
       final factStrPtr = _fmpzGetStr(nullptr, 10, factorial);
       final factStr = factStrPtr.toDartString();
       _free(factStrPtr.cast());
@@ -471,20 +501,23 @@ class CasBridge {
     return evaluate('2^$exponent');
   }
 
-  /// Get comprehensive test results showing actual computations
+  /// Get comprehensive test results showing actual computations from ALL libraries
   Map<String, List<String>> getTestResults() {
     final results = <String, List<String>>{};
     
-    if (_symengineAvailable) {
-      results['SymEngine (High-level)'] = [
+    if (_flutterSymengineAvailable) {
+      results['SymEngine (Flutter Wrapper)'] = [
         'Basic: ${evaluate('2+3*4')}',
         'Expand: ${expand('(x+1)^2')}', 
         'Factor: ${factor('x^2-1')}',
         'Solve: ${solve('x^2-4', 'x')}',
         'Power: ${testGMPViaSymEngine(64)}',
+        'Version: ${getFlutterWrapperVersion()}',
+        'Test Basic: ${testFlutterWrapperBasic()}',
+        'Test Symbolic: ${testFlutterWrapperSymbolic()}',
       ];
     } else {
-      results['SymEngine (High-level)'] = ['Not available'];
+      results['SymEngine'] = ['Not available'];
     }
     
     if (_gmpDirectAvailable) {
@@ -524,14 +557,20 @@ class CasBridge {
     return results;
   }
 
-  /// Get library availability status
+  /// Get library availability status for ALL libraries
   Map<String, bool> getLibraryStatus() {
     return {
-      'SymEngine Wrapper': _symengineAvailable,
+      'Flutter SymEngine Wrapper': _flutterSymengineAvailable,
       'GMP Direct': _gmpDirectAvailable,
       'MPFR Direct': _mpfrDirectAvailable,
       'MPC Direct': _mpcDirectAvailable,
       'FLINT Direct': _flintDirectAvailable,
     };
+  }
+
+  /// Get the preferred SymEngine wrapper type being used
+  String getSymEngineWrapperType() {
+    if (_flutterSymengineAvailable) return 'Flutter Wrapper';
+    return 'None Available';
   }
 }
